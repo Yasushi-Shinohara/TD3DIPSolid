@@ -1,14 +1,14 @@
 Subroutine Writeout_OMPinfo(Nk)
   Use Omp_lib
   Implicit none
-  Integer, intent(in) :: Nk
+  Integer, intent(in) :: Nk(3)
   Integer :: NOMP
 
   !$ NOMP = omp_get_max_threads()
   !$ Write(*,'("# ++++++++++++++++++++++++++++")') 
   !$ Write(*,'("# Number of OpenMP thread =",i8)')  NOMP
-  !$ If (Nk < NOMP) then
-  !$   Write(*,'("# CAUTION: OMP parallelization is not efficient because of Nk < NOMP.")')
+  !$ If (product(Nk) < NOMP) then
+  !$   Write(*,'("# CAUTION: OMP parallelization is not efficient because of product(Nk) < NOMP.")')
   !$ End If
   !$ Write(*,'("# ++++++++++++++++++++++++++++")') 
  

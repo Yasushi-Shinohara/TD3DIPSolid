@@ -202,10 +202,10 @@ class RT_propagation_class():
             np.ctypeslib.ndpointer(dtype='complex128'),  #ubk
             np.ctypeslib.ndpointer(dtype='complex128'),  #hGGk
 #            ct.POINTER(ct.c_int32),                      #NG
-            np.ctypeslib.ndpointer(dtype='int32'),       #NG
+            np.ctypeslib.ndpointer(dtype='int64'),       #NG
             ct.POINTER(ct.c_int32),                      #Nocc
 #            ct.POINTER(ct.c_int32),                      #Nk
-            np.ctypeslib.ndpointer(dtype='int32'),       #Nk
+            np.ctypeslib.ndpointer(dtype='int64'),       #Nk
             ct.POINTER(ct.c_double),]                    #dt
         self.FL.ugbk_forward_rk4_.restype = ct.c_void_p
         self.FL.ugbk_forward_rk4fft_.argtypes = [
@@ -213,20 +213,20 @@ class RT_propagation_class():
             np.ctypeslib.ndpointer(dtype='complex128'),  #tGGk
             np.ctypeslib.ndpointer(dtype='float64'),     #vx
 #            ct.POINTER(ct.c_int32),                      #NG
-            np.ctypeslib.ndpointer(dtype='int32'),       #NG
+            np.ctypeslib.ndpointer(dtype='int64'),       #NG
             ct.POINTER(ct.c_int32),                      #Nocc
 #            ct.POINTER(ct.c_int32),                      #Nk
-            np.ctypeslib.ndpointer(dtype='int32'),       #Nk
+            np.ctypeslib.ndpointer(dtype='int64'),       #Nk
             ct.POINTER(ct.c_double),]                    #dt
         self.FL.ugbk_forward_rk4fft_.restype = ct.c_void_p
         self.FL.ugbk_forward_exp_.argtypes = [
             np.ctypeslib.ndpointer(dtype='complex128'),  #ubk
             np.ctypeslib.ndpointer(dtype='complex128'),  #hGGk
 #            ct.POINTER(ct.c_int32),                      #NG
-            np.ctypeslib.ndpointer(dtype='int32'),       #NG
+            np.ctypeslib.ndpointer(dtype='int64'),       #NG
             ct.POINTER(ct.c_int32),                      #Nocc
 #            ct.POINTER(ct.c_int32),                      #Nk
-            np.ctypeslib.ndpointer(dtype='int32'),       #Nk
+            np.ctypeslib.ndpointer(dtype='int64'),       #Nk
             ct.POINTER(ct.c_double),]                    #dt
         self.FL.ugbk_forward_exp_.restype = ct.c_void_p
         #self.FL.ugbk_forward_ks_.argtypes = [
@@ -241,9 +241,11 @@ class RT_propagation_class():
         #    ct.POINTER(ct.c_int32),]                     #NKS
         #self.FL.ugbk_forward_ks_.restype = ct.c_void_p
         self.FL.writeout_ompinfo_.argtypes = [
-            ct.POINTER(ct.c_int32),]                     #Nk
+            np.ctypeslib.ndpointer(dtype='int64'),]       #Nk
+#            ct.POINTER(ct.c_int32),]                     #Nk
         self.FL.writeout_ompinfo_.restype = ct.c_void_p
-        self.FL.writeout_ompinfo_(self.ref_Nk)
+#        self.FL.writeout_ompinfo_(self.ref_Nk)
+        self.FL.writeout_ompinfo_(param.Nk)
 
     def uGbk_forward_RK4_Fortran(self, param, uGbk, hGGk, tGGk, vx):
         self.FL.ugbk_forward_rk4_(uGbk, hGGk, self.ref_NG, self.ref_Nocc, self.ref_Nk, self.ref_dt)
