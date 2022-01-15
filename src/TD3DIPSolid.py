@@ -33,9 +33,9 @@ if (param.plot_figure_option): #Matplotlib is activated for the cluster_mode == 
     from matplotlib import cm #To include color map
 
 #############################Prep. for the system########################
-uGbk = np.zeros([param.NG, param.NG, param.Nk],dtype='complex128') #Wave function in reciprocal space
-epsbk = np.zeros([param.NG, param.Nk],dtype='float64') #Eigenvalue of the Hamiltonian
-occbk = np.zeros([param.NG, param.Nk],dtype='float64') #Occupation number
+uGbk = np.zeros([np.prod(param.NG), np.prod(param.NG), np.prod(param.Nk)],dtype='complex128') #Wave function in reciprocal space
+epsbk = np.zeros([np.prod(param.NG), np.prod(param.Nk)],dtype='float64') #Eigenvalue of the Hamiltonian
+occbk = np.zeros([np.prod(param.NG), np.prod(param.Nk)],dtype='float64') #Occupation number
 
 vx, vG, vGG, vGGk = get_vxvGvGGvGGk(param)
 if(param.plot_figure_option):
@@ -44,7 +44,7 @@ tGGk = get_tGGk(param,0.0)
 hGGk = tGGk + vGGk
 
 #Band calculation 
-for ik in range(param.Nk):
+for ik in range(np.prod(param.Nk)):
     epsbk[:,ik], uGbk[:,:,ik] = np.linalg.eigh(hGGk[:,:,ik])
 uGbk = uGbk/np.sqrt(param.a)*float(param.NG) #Normalization
 Eg = np.amin(epsbk[param.Nocc,:])-np.amax(epsbk[param.Nocc - 1,:])
