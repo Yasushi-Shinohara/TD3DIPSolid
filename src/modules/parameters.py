@@ -15,18 +15,20 @@ class parameter_class:
         self.minimal_output = True    #A flag to write-out minimal data or not
         self.Fortlib_option = False   #A flag to use Fortran acceleration by using "Fortlib"
         ## System info.
-        self.a = 8.0                  #The lattice constant
-        self.b = None                 #The reciprocal lattice vector, tpi/a
+        self.a = np.array([[8.0, 0.0, 0.0], [0.0, 8.0, 0.0], [0.0, 0.0, 8.0]])     #The lattice constant
+        self.alen = None
+        self.b = None                 #The reciprocal lattice vector, 
+        self.blen = None   
+        self.vol = None               #Volume of the cell
         self.v0 = 0.37                #The depth of the local potential
-        self.flat_length = -1.0       #The length that potential is flat with zero-value
         self.temperature = -1.0       #Electron temperature, negative value leading to the zero-temperature
         self.Nave = 4.0               #Number of electron in the cell, doubly degenerated due to the spin
         self.Nocc = None              #Number of occupied levels, int(Nave/2)
         ## Numerical discretization
-        self.NG = 12                  #Number of spatial grid
-        self.H = None                 #Spatial grid size, a/NG
-        self.x = None                 #Spatial grid
-        self.Nk = 20                  #Number of Brillouin zone sampling
+        self.NG = np.array([12, 12, 12])    #Number of spatial grid
+        self.dr = None                 #Spatial grid sizes
+        self.r = None                 #Spatial grid
+        self.Nk = np.array([4, 4, 4]) #Number of Brillouin zone sampling
         self.k = None                 #k-grid
         ## Time propagation
         self.propagator_option = 'exp'        #The size of the time-step
@@ -80,9 +82,10 @@ class parameter_class:
                     else:
                         self.Fortlib_option = False
                 if (str(text[i]) == 'a'):
-                    self.a = float(str(text[i+1]))
-                if (str(text[i]) == 'flat_length'):
-                    self.flat_length = float(str(text[i+1]))
+                    temp = text[i+1].split()
+                    self.a[0] = float(str(temp[0]))
+                    self.a[1] = float(str(temp[1]))
+                    self.a[2] = float(str(temp[2]))
                 if (str(text[i]) == 'v0'):
                     self.v0 = float(str(text[i+1]))
                 if (str(text[i]) == 'temperature'):
@@ -91,10 +94,15 @@ class parameter_class:
                     self.Nave = float(str(text[i+1]))
                     
                 if (str(text[i]) == 'NG'):
-                    self.NG = int(str(text[i+1]))
+                    temp = text[i+1].split()
+                    self.NG[0] = int(str(temp[0]))
+                    self.NG[1] = int(str(temp[1]))
+                    self.NG[2] = int(str(temp[2]))
                 if (str(text[i]) == 'Nk'):
-                    self.Nk = int(str(text[i+1]))
-
+                    temp = text[i+1].split()
+                    self.Nk[0] = int(str(temp[0]))
+                    self.Nk[1] = int(str(temp[1]))
+                    self.Nk[2] = int(str(temp[2]))
                 if (str(text[i]) == 'propagator_option'):
                     self.propagator_option = text[i+1].split()[0]
                 if (str(text[i]) == 'dt'):
@@ -157,11 +165,15 @@ class parameter_class:
             print('Error: Number of argmeunt is wrong.')
             sys.exit()
         
-        if (self.NKS > self.NG):
+        if (self.NKS > np.prod(self.NG)):
             print('# NOTICE: NKS is larger than the size of the Hilbert space, NG. ')
             print('# NKS is replaced by NG ')
-            self.NKS = 1*self.NG
+            self.NKS = 1*np.prod(self.NG)
 
+        self.alen = np.zeros(3, dtype='float64')
+        self.alen[0] = np.linalg.norm(self.a[:,0])
+        self.alen[1] = np.linalg.norm(self.a[:,1])
+        self.alen[2] = np.linalg.norm(self.a[:,2])
         print('#=====Print the parmeters')
         print('# sys_name =', self.sys_name)
         print('# plot_figure_option =', self.plot_figure_option)
@@ -170,7 +182,7 @@ class parameter_class:
         print('# Fortlib_option =', self.Fortlib_option)
         print('# ')
         print('# a =', self.a, ' [a.u.] =',self.a*aB, ' [nm]')
-        print('# flat_length =', self.flat_length, ' [a.u.] =',self.flat_length*aB, ' [nm]: IGNORED if negative value')
+        print('# alen =', self.alen, ' [a.u.] =',self.alen*aB, ' [nm]')
         print('# v0 =', self.v0, ' [a.u.] =', self.v0*Hartree, ' [eV]') 
         print('# Nave =', self.Nave) 
         print('# ')
@@ -195,7 +207,7 @@ class parameter_class:
             print('# phi_CEP =', self.phi_CEP, ' [2 pi]')
             self.phi_CEP = tpi*self.phi_CEP
             print('# E0 =', self.E0, ' [a.u.] =', self.E0*Atomfield, ' [V/nm]') 
-            print('# e*a*E0 =', self.a*self.E0, ' [a.u.] =', self.a*self.E0*Hartree, ' [eV]')
+            print('# e*alen*E0 =', self.alen*self.E0, ' [a.u.] =', self.alen*self.E0*Hartree, ' [eV]')
             print('# E0/omegac =', self.E0/self.omegac, ' [a.u.] =', self.E0/self.omegac/aB, ' [/nm]') 
             print('# Peak intensity of the envelope: Imax =', (self.E0)**2, ' [a.u.] =', (self.E0)**2*halfepsc/1.0e9, ' [GW/cm^2]') 
         else:
@@ -209,21 +221,58 @@ class parameter_class:
                 print('# phi_CEP =', self.phi_CEP[icolor], ' [2 pi]')
                 self.phi_CEP[icolor] = tpi*self.phi_CEP[icolor]
                 print('# E0 =', self.E0[icolor], ' [a.u.] =', self.E0[icolor]*Atomfield, ' [V/nm]') 
-                print('# e*a*E0 =', self.a*self.E0[icolor], ' [a.u.] =', self.a*self.E0[icolor]*Hartree, ' [eV]')
+                print('# e*alen*E0 =', self.alen*self.E0[icolor], ' [a.u.] =', self.alen*self.E0[icolor]*Hartree, ' [eV]')
 
     def grid_constructions(self):
-        self.b = tpi/self.a
-        self.H = self.a/np.float(self.NG)
-        self.x = np.linspace(0.0, self.a, num=self.NG, endpoint=False, dtype='float64')
-        self.G = np.fft.fftfreq(self.NG)*(self.b*np.float(self.NG))
+        self.vol = np.dot(self.a[:,0], np.cross(self.a[:,1], self.a[:,2]))
+        self.b = np.zeros([3,3], dtype='float64')
+        self.b[0] = tpi/self.vol*np.cross(self.a[:,1], self.a[:,2])
+        self.b[1] = tpi/self.vol*np.cross(self.a[:,2], self.a[:,0])
+        self.b[2] = tpi/self.vol*np.cross(self.a[:,0], self.a[:,1])
+        self.blen = np.zeros(3, dtype='float64')
+        self.blen[0] = np.linalg.norm(self.b[:,0])
+        self.blen[1] = np.linalg.norm(self.b[:,1])
+        self.blen[2] = np.linalg.norm(self.b[:,2])
+        self.dr = self.alen/self.NG
+        self.r = np.zeros([np.prod(self.NG),3],dtype='float64')
+        l=0
+        for i in range(self.NG[0]):
+            for j in range(self.NG[1]):
+                for k in range(self.NG[2]):
+                    self.r[l,0] = i*self.a[0,0]/self.NG[0] + j*self.a[0,1]/self.NG[1] + k*self.a[0,2]/self.NG[2]
+                    self.r[l,1] = i*self.a[1,0]/self.NG[0] + j*self.a[1,1]/self.NG[1] + k*self.a[1,2]/self.NG[2]
+                    self.r[l,2] = i*self.a[2,0]/self.NG[0] + j*self.a[2,1]/self.NG[1] + k*self.a[2,2]/self.NG[2]
+                    l += 1
+        self.G = np.zeros([np.prod(self.NG),3],dtype='float64')
+        l=0
+        fa1 = np.fft.fftfreq(self.NG[0])*(np.float(self.NG[0])) #FFT freq array
+        fa2 = np.fft.fftfreq(self.NG[1])*(np.float(self.NG[1]))
+        fa3 = np.fft.fftfreq(self.NG[2])*(np.float(self.NG[2]))
+        for i in range(self.NG[0]):
+            for j in range(self.NG[1]):
+                for k in range(self.NG[2]):
+                    self.G[l,0] = fa1[i]*self.b[0,0] + fa1[j]*self.b[0,1] + fa3[k]*self.b[0,2]
+                    self.G[l,1] = fa1[i]*self.b[1,0] + fa1[j]*self.b[1,1] + fa3[k]*self.b[1,2]
+                    self.G[l,2] = fa1[i]*self.b[2,0] + fa1[j]*self.b[2,1] + fa3[k]*self.b[2,2]
+                    l += 1
         #Brillouin zone construction
-        self.k = np.linspace(-0.5*self.b, 0.5*self.b, num=self.Nk, endpoint=False, dtype='float64')
-        self.k = self.k + (0.5*self.b)/np.float(self.Nk)
+        self.k = np.zeros([np.prod(self.Nk),3],dtype='float64')
+        l=0
+        for i in range(self.Nk[0]):
+            for j in range(self.Nk[1]):
+                for k in range(self.Nk[2]):
+                    self.k[l,0] = i*self.b[0,0]/self.Nk[0] + j*self.b[0,1]/self.Nk[1] + k*self.b[0,2]/self.Nk[2]
+                    self.k[l,1] = i*self.b[1,0]/self.Nk[0] + j*self.b[1,1]/self.Nk[1] + k*self.b[1,2]/self.Nk[2]
+                    self.k[l,2] = i*self.b[2,0]/self.Nk[0] + j*self.b[2,1]/self.Nk[1] + k*self.b[2,2]/self.Nk[2]
+                    l += 1
+        for i in range(3):
+            self.k[:,i] = self.k[:,i] - np.average(self.k[:,i])
         print('# ')
         print('# b = 2pi/a =', self.b, ' [a.u.] =', self.b/aB, '[/nm]')
-        print('# H =', self.H, ' [a.u.] =',self.H*aB, ' [nm]')
-        print('# (pi/H)^2 =', (pi/self.H)**2, ' [a.u.] =', (pi/self.H)**2*Hartree, ' [eV]')
-        print('# Nk*a =', self.Nk*self.a, ' [a.u.] =', (self.Nk*self.a)*aB, ' [nm]')
+        print('# blen = 2pi/a =', self.blen, ' [a.u.] =', self.blen/aB, '[/nm]')
+        print('# dr =', self.dr, ' [a.u.] =',self.dr*aB, ' [nm]')
+        print('# (pi/dr)^2 =', (pi/self.dr)**2, ' [a.u.] =', (pi/self.dr)**2*Hartree, ' [eV]')
+        print('# Nk*alen =', self.Nk*self.alen, ' [a.u.] =', (self.Nk*self.alen)*aB, ' [nm]')
         print('# ')
 
     def get_Nocc(self):
