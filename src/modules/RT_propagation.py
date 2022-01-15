@@ -1,6 +1,6 @@
 # coding: UTF-8
-# This is created 2020/11/17 by Y. Shinohara
-# This is lastly modified 2020/11/17 by Y. Shinohara
+# This is created 2022/01/16 by Y. Shinohara
+# This is lastly modified xxxx/xx/xx by Y. Shinohara
 import sys
 import os
 from modules.constants import tpi, zI

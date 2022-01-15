@@ -1,6 +1,6 @@
 # coding: UTF-8
-# This is created 2020/04/17 by Y. Shinohara
-# This is lastly modified 2020/05/20 by Y. Shinohara
+# This is created 2022/01/16 by Y. Shinohara
+# This is lastly modified xxxx/xx/xx by Y. Shinohara
 import sys
 from modules.constants import pi,tpi, Atomtime, Hartree, Atomfield, aB, halfepsc
 import numpy as np
